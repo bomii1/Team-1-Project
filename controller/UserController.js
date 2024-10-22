@@ -3,6 +3,7 @@ const mysql = require('mysql2/promise');
 const {StatusCodes} = require('http-status-codes');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+
 const dotenv = require('dotenv');
 dotenv.config();
 
@@ -67,7 +68,6 @@ const sign = async (req, res) => {
         const accessToken = jwt.sign({
             id: loginUser.id,
             email: loginUser.email,
-            password: loginUser.password,
             authorities: authorities
         }, process.env.PRIVATE_KEY, {
             expiresIn: '5m',
@@ -109,6 +109,35 @@ const sign = async (req, res) => {
         res.status(StatusCodes.OK).json(loginResult);
     } else {
         return res.status(StatusCodes.UNAUTHORIZED).end();
+    }
+};
+
+const signOut = async (req, res) => {
+    const { refreshJwt } = req.cookies;
+    console.log(req.cookies);
+
+    if (!refreshJwt) {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+            message: 'No refresh Token'
+        });
+    }
+
+    try {
+        const decoded = jwt.verify(refreshJwt, process.env.REFRESH_PRIVATE_KEY);
+
+        const sql = `DELETE FROM refresh_tokens WHERE user_id=? AND token=?`;
+        await conn.execute(sql, [decoded.id, refreshJwt]);
+
+        res.clearCookie('accessJwt');
+        res.clearCookie('refreshJwt');
+
+        return res.status(StatusCodes.OK).json({
+            message: '로그아웃'
+        });
+    } catch (err) {
+        return res.status(StatusCodes.UNAUTHORIZED).json({
+            message: 'Invalid refresh Token'
+        });
     }
 };
 
@@ -165,6 +194,7 @@ const passwordReset = (req, res) => {
 module.exports = {
     signup,
     sign,
+    signOut,
     passwordResetRequest,
     passwordReset
 }

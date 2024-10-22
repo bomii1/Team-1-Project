@@ -5,9 +5,10 @@ const router = express.Router();
 const {
     signup,
     sign,
+    signOut,
     passwordResetRequest, 
     passwordReset 
-} = require('../controller/userController');
+} = require('../controller/UserController');
 
 router.use(express.json());
 
@@ -16,6 +17,9 @@ router.post('/signup', signup);
 
 // 로그인
 router.post('/sign', sign);
+
+// 로그아웃
+router.post('/signout', signOut);
 
 // 비밀번호 초기화 요청
 router.post('/reset', passwordResetRequest);
