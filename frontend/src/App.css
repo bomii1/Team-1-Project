@@ -9,6 +9,30 @@
   padding: 10px 0;
 }
 
+.home {
+  text-align: center;
+}
+
+.login {
+  text-align: center;
+}
+
+.login h1 {
+  padding: 20px;
+}
+
+.join {
+  text-align: center;
+}
+
+.join h1 {
+  padding: 20px;
+}
+
+.my-page {
+  text-align: center;
+}
+
 .optional {
   display: flex;
   justify-content: space-between;
@@ -26,10 +50,4 @@
 
 .login-input {
   margin: 15px;
-}
-
-.inner {
-  width: 600px;
-  background-color: yellow;
-  text-align: center;
 }

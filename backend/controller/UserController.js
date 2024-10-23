@@ -15,15 +15,39 @@ const signup = (req, res) => {
 
     let sql = `INSERT INTO users (email, username, password, nickname, salt) VALUES (?, ?, ?, ?, ?)`;
     let values = [email, username, hashPassword, nickname, salt];
-    conn.query(sql, values,
-        (err, results) =>  {
-            if (err) {
-                console.log(err);
-                return res.status(StatusCodes.BAD_REQUEST).end();
+
+    try {
+        conn.query(sql, values,
+            (err, results) =>  {
+                if (err) {
+                    console.log(err);
+                    return res.status(StatusCodes.BAD_REQUEST).end();
+                }
+    
+                const userId = results.insertId;
+                console.log(userId);
+    
+                let authoritySql = `INSERT INTO authorities (user_id, authority_name) VALUES (?, ?)`;
+                let authorityValues = [userId, 'ROLE_USER'];
+    
+                conn.query(authoritySql, authorityValues,
+                    (err, results) => {
+                        if (err) {
+                            console.log(err);
+                            return res.status(StatusCodes.BAD_REQUEST).end();
+                        }
+    
+                        res.status(StatusCodes.CREATED).json({
+                            message: `환영합니다.`
+                        })
+                    }
+                )
             }
-            res.status(StatusCodes.CREATED).json({ message: `환영합니다.` });
-        }
-    )     
+        ) 
+    } catch (err) {
+        console.error('Database error:', err);
+        return res.status(StatusCodes.BAD_REQUEST).end();
+    }   
 }
 
 const sign = async (req, res) => {
@@ -37,8 +61,9 @@ const sign = async (req, res) => {
 
     const {email, password} = req.body;
 
-    // login sql
-    let sql = `SELECT * FROM users WHERE email = ?`;
+
+    try {
+        let sql = `SELECT * FROM users WHERE email = ?`;
     let [results] = await conn.execute(sql, [email]);
     
     if (!results.length) {
@@ -90,7 +115,7 @@ const sign = async (req, res) => {
         // access 토큰 쿠키에 저장
         res.cookie('accessJwt', accessToken, {
             httpOnly: true,
-            secure: true, // HTTP 환경에서만 사용 
+            secure: true,
             maxAge: 5 * 60 * 1000 // 5분
         });
 
@@ -110,6 +135,15 @@ const sign = async (req, res) => {
     } else {
         return res.status(StatusCodes.UNAUTHORIZED).end();
     }
+    } catch (err) {
+        console.error('Error sign in:', err); // 에러 로깅
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+            message: 'Internal server error'
+        });
+    } finally {
+        await conn.end();
+    }
+    
 };
 
 const signOut = async (req, res) => {
